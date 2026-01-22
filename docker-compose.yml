@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: transactions-postgres
+    environment:
+      POSTGRES_USER: transactions
+      POSTGRES_PASSWORD: transactions
+      POSTGRES_DB: transactions
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: transactions-redis
+    ports:
+      - '6379:6379'
+
+volumes:
+  postgres_data:
