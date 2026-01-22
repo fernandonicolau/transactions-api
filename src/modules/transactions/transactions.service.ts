@@ -4,6 +4,7 @@ import { QueryFailedError } from 'typeorm';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { ListTransactionsDto } from './dto/list-transactions.dto';
 import { TransactionStatus } from './entities/transaction.entity';
+import { TransactionsGateway } from './gateways/transactions.gateway';
 import { TransactionsQueue } from './queue/transactions.queue';
 import { TransactionsRepository } from './repositories/transactions.repository';
 
@@ -17,6 +18,7 @@ export class TransactionsService {
   constructor(
     private readonly repository: TransactionsRepository,
     private readonly queue: TransactionsQueue,
+    private readonly gateway: TransactionsGateway,
   ) {}
 
   async create(dto: CreateTransactionDto) {
@@ -68,6 +70,20 @@ export class TransactionsService {
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
+    return transaction;
+  }
+
+  async updateStatus(id: string, status: TransactionStatus) {
+    await this.repository.updateStatus(id, status);
+    const transaction = await this.repository.findById(id);
+    if (!transaction) {
+      return null;
+    }
+    this.gateway.broadcastTransactionUpdated({
+      id: transaction.id,
+      status: transaction.status,
+      updatedAt: transaction.updatedAt,
+    });
     return transaction;
   }
 

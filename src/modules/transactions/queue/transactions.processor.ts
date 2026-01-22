@@ -4,6 +4,7 @@ import { Worker } from 'bullmq';
 import { PinoLogger } from 'nestjs-pino';
 import { TransactionStatus } from '../entities/transaction.entity';
 import { TransactionsRepository } from '../repositories/transactions.repository';
+import { TransactionsService } from '../transactions.service';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -13,6 +14,7 @@ export class TransactionsProcessor implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly repository: TransactionsRepository,
+    private readonly service: TransactionsService,
     private readonly config: ConfigService,
     private readonly logger: PinoLogger,
   ) {
@@ -36,12 +38,12 @@ export class TransactionsProcessor implements OnModuleInit, OnModuleDestroy {
           return;
         }
 
-        await this.repository.updateStatus(
+        await this.service.updateStatus(
           transactionId,
           TransactionStatus.PROCESSING,
         );
         await sleep(300);
-        await this.repository.updateStatus(
+        await this.service.updateStatus(
           transactionId,
           TransactionStatus.PROCESSED,
         );
@@ -54,7 +56,7 @@ export class TransactionsProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker.on('failed', async (job) => {
       if (!job) return;
       const { transactionId } = job.data as { transactionId: string };
-      await this.repository.updateStatus(
+      await this.service.updateStatus(
         transactionId,
         TransactionStatus.FAILED,
       );

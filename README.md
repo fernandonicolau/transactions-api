@@ -14,6 +14,8 @@ npm install
 NODE_ENV=development
 DATABASE_URL=postgresql://user:password@host:5432/db
 REDIS_URL=redis://host:6379
+CORS_ORIGIN=http://localhost:5173
+FRONT_URL=http://localhost:5173
 API_KEY=
 ```
 
@@ -41,6 +43,22 @@ curl "http://localhost:3000/v1/transactions?page=1&pageSize=10&status=PROCESSED"
 ### Buscar por id
 ```bash
 curl http://localhost:3000/v1/transactions/<transaction-id>
+```
+
+## Tempo real (Socket.IO)
+
+- Gateway emite `transaction.updated` quando o status muda.
+- CORS do WebSocket usa `FRONT_URL`, com fallback para `CORS_ORIGIN`.
+- Dependencias necessarias: `@nestjs/websockets`, `@nestjs/platform-socket.io`, `socket.io`.
+
+Exemplo (cliente):
+```ts
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3000', { withCredentials: true });
+socket.on('transaction.updated', (payload) => {
+  console.log(payload);
+});
 ```
 
 ## Idempotencia (POST /v1/transactions)
